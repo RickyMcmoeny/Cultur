@@ -1,8 +1,3 @@
-// Programming 2D Games
-// Copyright (c) 2011 by: 
-// Charles Kelly
-// Elevations.cpp Isometric Elevation Demo v1.0
-// Elevations is the class we create.
 
 #include "elevations.h"
 #include <iostream>
@@ -41,7 +36,7 @@ unit createUnit(int x, int y, int team, unitData data)
 }
 
 
-tile createTile(int x, int y, int currentLandFrame, int currentResourceFrame, int currentUnitFrame, int currentUnitCounterFrame, int currentSelectFrame)
+tile createTile(int x, int y, int currentLandFrame, int currentResourceFrame, int currentUnitFrame)
 {
 	tile newTile;
 	newTile.x = x;
@@ -50,8 +45,9 @@ tile createTile(int x, int y, int currentLandFrame, int currentResourceFrame, in
 	newTile.currentLandFrame = currentLandFrame;
 	newTile.currentResourceFrame = currentResourceFrame;
 	newTile.currentUnitFrame = currentUnitFrame;
-	newTile.currentUnitCounterFrame = currentUnitCounterFrame;
-	newTile.currentSelectFrame = currentSelectFrame;
+	newTile.currentHealthBarFrame = 0;
+	newTile.currentUnitCounterFrame = 0;
+	newTile.currentSelectFrame = 0;
 
 	return newTile;
 }
@@ -60,6 +56,32 @@ columns createColumn()
 {
 	columns newColumn;
 	return newColumn;
+}
+
+int calculateHealthBar(int currenthealth, int maxhealth)
+{
+	int returnvalue = 0;
+	float healthbarstat = (float) currenthealth / (float) maxhealth;
+
+	if(healthbarstat > 0 && healthbarstat < .05)
+	{
+		returnvalue = 13;
+	}
+
+	else if(healthbarstat >= .5 && healthbarstat < .1) {returnvalue = 12;}
+	else if(healthbarstat >= .1 && healthbarstat < .2){returnvalue = 11;}
+	else if(healthbarstat >= .2 && healthbarstat < .3){returnvalue = 10;}
+	else if(healthbarstat >= .3 && healthbarstat < .4){returnvalue = 9;}
+	else if(healthbarstat >= .4 && healthbarstat < .5){returnvalue = 8;}
+	else if(healthbarstat >= .5 && healthbarstat < .6){returnvalue = 7;}
+	else if(healthbarstat >= .6 && healthbarstat < .7){returnvalue = 6;}
+	else if(healthbarstat >= .7 && healthbarstat < .8){returnvalue = 5;}
+	else if(healthbarstat >= .8 && healthbarstat < .9){returnvalue = 4;}
+	else if(healthbarstat >= .9 && healthbarstat < .95){returnvalue = 3;}
+	else if(healthbarstat >= .95 && healthbarstat < 1){returnvalue = 2;}
+	else if(healthbarstat == 1){returnvalue = 1;}
+
+	return returnvalue; // TODO: CHANGE ORDER OF IF STATEMENTS TO START WITH 100% health
 }
 
 
@@ -129,10 +151,19 @@ void Elevations::initialize(HWND hwnd)
 	 if (!textures3.initialize(graphics,TEXTURES3_CUSTOM))
         throw(GameError(gameErrorNS::FATAL_ERROR, "Error initializing textures3"));
 	
-	 	//muh_textures
+	 //muh_textures
 	 if (!textures4.initialize(graphics,TEXTURES4_CUSTOM))
         throw(GameError(gameErrorNS::FATAL_ERROR, "Error initializing textures4"));
 	
+	 //muh_textures
+	 if (!textures5.initialize(graphics,TEXTURES5_CUSTOM))
+        throw(GameError(gameErrorNS::FATAL_ERROR, "Error initializing textures5"));
+
+	 //muh_textures
+	 if (!textures6.initialize(graphics,TEXTURES6_CUSTOM))
+        throw(GameError(gameErrorNS::FATAL_ERROR, "Error initializing textures6"));
+
+
 	     // init text
     if (!fontCK->initialize(graphics,FONT_IMAGE))
         throw(GameError(gameErrorNS::FATAL_ERROR, "Error initializing CKfont"));
@@ -188,10 +219,7 @@ void Elevations::initialize(HWND hwnd)
             for(int col=0; col<MAP_SIZE; col++)
                 mapData >> selectMap[row][col]; // read Selection map
 		std::getline(mapData,str);
-        std::getline(mapData,str);              // skip 5th comment line
-        for(int row=0; row<MAP_SIZE; row++)
-            for(int col=0; col<MAP_SIZE; col++)
-                mapData >> unitMap[row][col]; // read Unit map
+
     }
     catch(...)
     {
@@ -204,7 +232,7 @@ void Elevations::initialize(HWND hwnd)
 		worldMap.row.push_back(createColumn());
 		for(int col=0; col<MAP_SIZE; col++)
 		{
-			worldMap.row[row].column.push_back(createTile(row, col, tileMap[row][col], objectMap[row][col], unitMap[row][col], 0, 0)); // read Unit map
+			worldMap.row[row].column.push_back(createTile(row, col, tileMap[row][col], objectMap[row][col], unitMap[row][col])); // create tiles from mapData
 		}
 	}
 		
@@ -216,10 +244,10 @@ void Elevations::initialize(HWND hwnd)
     mapTile.setFrames(0, 0);
     mapTile.setCurrentFrame(0);
 
-    // Tree image
-    tree.initialize(graphics,TEXTURE2_SIZE,TEXTURE2_SIZE,TEXTURE2_COLS,&textures2);
-    tree.setFrames(0, 0);
-    tree.setCurrentFrame(0);
+    // objectResource image
+    objectResource.initialize(graphics,TEXTURE2_SIZE,TEXTURE2_SIZE,TEXTURE2_COLS,&textures2);
+    objectResource.setFrames(0, 0);
+    objectResource.setCurrentFrame(0);
 
 	// select image
     selection.initialize(graphics,TEXTURE3_SIZE,TEXTURE3_SIZE,TEXTURE3_COLS,&textures3);
@@ -230,6 +258,16 @@ void Elevations::initialize(HWND hwnd)
     unit.initialize(graphics,TEXTURE4_SIZE,TEXTURE4_SIZE,TEXTURE4_COLS,&textures4);
     unit.setFrames(0, 0);
     unit.setCurrentFrame(0);
+
+	//healthbar image
+    healthBar.initialize(graphics,TEXTURE5_SIZE,TEXTURE5_SIZE,TEXTURE5_COLS,&textures5);
+    healthBar.setFrames(0, 0);
+    healthBar.setCurrentFrame(0);
+
+	//unitCounter image
+    unitCounter.initialize(graphics,TEXTURE6_SIZE,TEXTURE6_SIZE,TEXTURE6_COLS,&textures6);
+    unitCounter.setFrames(0, 0);
+    unitCounter.setCurrentFrame(0);
 
 	playerViewY = 0;
 	playerViewX = 0;
@@ -497,7 +535,8 @@ void Elevations::initialize(HWND hwnd)
 	someUnits.units.push_back(createUnit(5, 5, 1, unitLibrary.library[0]));
 	someUnits.units.push_back(createUnit(10, 5, 1, unitLibrary.library[0]));
 	someUnits.units.push_back(createUnit(10, 10, 0, unitLibrary.library[1]));
-
+	someUnits.units.push_back(createUnit(10, 10, 0, unitLibrary.library[1]));
+	someUnits.units.push_back(createUnit(10, 10, 0, unitLibrary.library[1]));
 
 	turnMessage = false;
 	selectMessage = false;
@@ -565,6 +604,7 @@ void Elevations::update()
 				if(someUnits.units[x].health <= 0)
 				{
 					someUnits.units.erase(someUnits.units.begin()+x);
+					attacking = false;
 					if(selected > x)
 					{
 						//debugMessage = true;
@@ -598,10 +638,44 @@ void Elevations::update()
 		for(int col=0; col<MAP_SIZE; col++)
 		{
 			worldMap.row[row].column[col].currentUnitFrame = 0;
+			worldMap.row[row].column[col].currentSelectFrame = 0;
+			worldMap.row[row].column[col].currentHealthBarFrame = 0;
+			worldMap.row[row].column[col].currentUnitCounterFrame = 0;
 		}
 	}
 
+	if(selected == -1)
+	{
+		worldMap.row[lastSelectRow].column[lastSelectCol].currentSelectFrame = 1;
+	}
+	else if(selected > -1)
+	{
+		worldMap.row[lastSelectRow].column[lastSelectCol].currentSelectFrame = someUnits.units[selected].currentDirection;
+	}
 
+	
+
+	for(int x = 0; x < someUnits.units.size(); x++)
+	{
+		int unitTotal = 1;
+		int unitInactive = 0;
+		for(int y = 0; y < someUnits.units.size(); y++)
+		{
+			if(y != x && someUnits.units[y].x == someUnits.units[x].x && someUnits.units[y].y == someUnits.units[x].y)
+			{
+				unitTotal++;
+			}
+			if(someUnits.units[y].x == someUnits.units[x].x && someUnits.units[y].y == someUnits.units[x].y && someUnits.units[y].movement <= 0)
+			{
+				unitInactive++;
+			}
+		}
+		worldMap.row[someUnits.units[x].x].column[someUnits.units[x].y].currentUnitCounterFrame = unitTotal + (unitInactive * 11); //set unitcounter
+
+		//healthbar calculation
+		worldMap.row[someUnits.units[x].x].column[someUnits.units[x].y].currentHealthBarFrame = calculateHealthBar(someUnits.units[x].health, unitLibrary.library[someUnits.units[x].id].maxhealth);
+	}
+	
 
 	for(int x = 0; x < someUnits.units.size(); x++)
 	{
@@ -623,7 +697,7 @@ void Elevations::update()
 
     mapTile.update(frameTime);
 
-	if(selected == -1)
+	if(selected == -1 || selected == -2)
 	{
 		if (input->isKeyDown(UP_KEY))       // if up arrow
 		{
@@ -650,12 +724,11 @@ void Elevations::update()
 		{
 			if(checkSpace(lastSelectRow-1, lastSelectCol, worldMap) == false)
 			{
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 0;
+				someUnits.units[selected].currentDirection = 2;
 				someUnits.units[selected].x -= 1;
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 1;
 				someUnits.units[selected].movement--;
-				lastSelectRow-=1;
 				someUnits.units[selected].currentAction = 2;
+				lastSelectRow-=1;
 			}
 			else if(attacking == true) //unit is there and attacking == true
 			{
@@ -669,12 +742,11 @@ void Elevations::update()
 		{
 			if(checkSpace(lastSelectRow+1, lastSelectCol, worldMap) == false)
 			{
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 0;
+				someUnits.units[selected].currentDirection = 4;
 				someUnits.units[selected].x += 1;
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 1;
 				someUnits.units[selected].movement--;
-				lastSelectRow+=1;
 				someUnits.units[selected].currentAction = 4;
+				lastSelectRow+=1;
 			}
 			else if(attacking == true) //unit is there and attacking == true
 			{
@@ -688,12 +760,11 @@ void Elevations::update()
 		{
 			if(checkSpace(lastSelectRow, lastSelectCol-1, worldMap) == false)
 			{
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 0;
+				someUnits.units[selected].currentDirection = 5;
 				someUnits.units[selected].y -= 1;
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 1;
 				someUnits.units[selected].movement--;
-				lastSelectCol-=1;
 				someUnits.units[selected].currentAction = 5;
+				lastSelectCol-=1;
 			}
 			else if(attacking == true) //unit is there and attacking == true
 			{
@@ -707,12 +778,11 @@ void Elevations::update()
 		{
 			if(checkSpace(lastSelectRow, lastSelectCol+1, worldMap) == false)
 			{
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 0;
+				someUnits.units[selected].currentDirection = 3;
 				someUnits.units[selected].y += 1;
-				worldMap.row[someUnits.units[selected].x].column[someUnits.units[selected].y].currentSelectFrame = 1;
 				someUnits.units[selected].movement--;
-				lastSelectCol+=1;
 				someUnits.units[selected].currentAction = 3;
+				lastSelectCol+=1;
 			}
 			else if(attacking == true) //unit is there and attacking == true
 			{
@@ -798,7 +868,7 @@ void Elevations::update()
 								if(worldMap.row[lastSelectRow].column[lastSelectCol].currentSelectFrame != 0)
 								{
 									worldMap.row[lastSelectRow].column[lastSelectCol].currentSelectFrame = 0;
-									selected = -1;
+									selected = -2;
 								}
 							}
 						}
@@ -852,11 +922,11 @@ void Elevations::render()
     {
         for(int col=0; col<MAP_SIZE; col++)
         {
-            tree.setCurrentFrame(worldMap.row[row].column[col].currentResourceFrame);
-            tree.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
-            tree.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) -
+            objectResource.setCurrentFrame(worldMap.row[row].column[col].currentResourceFrame);
+            objectResource.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
+            objectResource.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) -
                                   heightMap[row][col] * HEIGHT_CHANGE)+ playerViewY);
-            tree.draw();
+            objectResource.draw();
         }
     }
 
@@ -869,8 +939,7 @@ void Elevations::render()
         {
             selection.setCurrentFrame(worldMap.row[row].column[col].currentSelectFrame);
             selection.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
-            selection.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) -
-                                  heightMap[row][col] * (16)*4)+ playerViewY);
+            selection.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) - 32)+ playerViewY);
             selection.draw();
         }
     }
@@ -883,9 +952,32 @@ void Elevations::render()
         {
             unit.setCurrentFrame(worldMap.row[row].column[col].currentUnitFrame);
             unit.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
-            unit.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) -
-                                  heightMap[row][col] * (HEIGHT_CHANGE))+ playerViewY);
+            unit.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) - heightMap[row][col] * (HEIGHT_CHANGE))+ playerViewY);
             unit.draw();
+        }
+    }
+
+	// Draw unitCounter
+	for(int row=0; row<MAP_SIZE; row++)
+    {
+        for(int col=0; col<MAP_SIZE; col++)
+        {
+            unitCounter.setCurrentFrame(worldMap.row[row].column[col].currentUnitCounterFrame);
+            unitCounter.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
+            unitCounter.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) + 3 * (HEIGHT_CHANGE)) + playerViewY);
+            unitCounter.draw();
+        }
+    }
+
+	// Draw healthBar
+	for(int row=0; row<MAP_SIZE; row++)
+    {
+        for(int col=0; col<MAP_SIZE; col++)
+        {
+            healthBar.setCurrentFrame(worldMap.row[row].column[col].currentHealthBarFrame);
+            healthBar.setX((float)( SCREEN_X - (row*TEXTURE_SIZE/2) + (col*TEXTURE_SIZE/2) ) + playerViewX);
+            healthBar.setY((float)( SCREEN_Y + (row*TEXTURE_SIZE/4) + (col*TEXTURE_SIZE/4) - heightMap[row][col] * (HEIGHT_CHANGE)) + playerViewY);
+            healthBar.draw();
         }
     }
 

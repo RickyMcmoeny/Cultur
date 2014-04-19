@@ -1,8 +1,3 @@
-// Programming 2D Games
-// Copyright (c) 2011 by: 
-// Charles Kelly
-// Elevations.h Isometric Diamond Demo v1.1
-//   The map data is read from the file map1.txt
 
 #ifndef _ELEVATIONS_H           // Prevent multiple definitions if this 
 #define _ELEVATIONS_H           // file is included in more than one place
@@ -202,6 +197,7 @@ using namespace std;
 		int currentSelectFrame;
 		int currentUnitFrame;
 		int currentUnitCounterFrame;
+		int currentHealthBarFrame;
 	
 	};
 
@@ -244,6 +240,12 @@ namespace elevationsNS
 
 	const int TEXTURE4_COLS = 8;
     const int TEXTURE4_SIZE = 64;
+
+	const int TEXTURE5_COLS = 13;
+    const int TEXTURE5_SIZE = 64;
+
+	const int TEXTURE6_COLS = 11;
+    const int TEXTURE6_SIZE = 64;
 }
 
 // Elevations is the class we create, it inherits from the Game class
@@ -256,16 +258,24 @@ private:
     TextureManager textures2;   // object texture
 	TextureManager textures3;   // selection textures
 	TextureManager textures4;   // unit textures
+	TextureManager textures5;   // unit textures
+	TextureManager textures6;   // unit textures
     Image   mapTile;
-    Image   tree;
+    Image   objectResource;
 	Image   selection;
 	Image	unit;
+	Image   healthBar;
+	Image	unitCounter;
     // Maps
     int tileMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];
     int heightMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];
-    int objectMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    // 0=empty, 1=Tree0, 2=Tree1
+    int objectMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    // 
 	int selectMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    //
 	int unitMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    //
+	int healthbarMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    //
+	int unitCounterMap[elevationsNS::MAP_SIZE][elevationsNS::MAP_SIZE];    //
+
+
 	int playerViewY;
 	int playerViewX;
 	int changeTile;

@@ -1,7 +1,3 @@
-// Programming 2D Games
-// Copyright (c) 2011 by: 
-// Charles Kelly
-// Elevations constants.h v1.0
 
 #ifndef _CONSTANTS_H            // Prevent multiple definitions if this 
 #define _CONSTANTS_H            // file is included in more than one place
@@ -52,8 +48,10 @@ const char TEXTURES_CUSTOM[] = "pictures\\land.png";
 const char TEXTURES2_CUSTOM[] = "pictures\\resources.png";
 const char TEXTURES3_CUSTOM[] = "pictures\\selections.png";
 const char TEXTURES4_CUSTOM[] = "pictures\\units.png";
+const char TEXTURES5_CUSTOM[] = "pictures\\healthbar_spritesheet.png";
+const char TEXTURES6_CUSTOM[] = "pictures\\unitCounter.png";
 
-// graphic images
+
 const char FONT_IMAGE[] = "pictures\\CKfont.png";
 
 
